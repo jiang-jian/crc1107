@@ -339,11 +339,11 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                         shaderCallback: (bounds) {
                           return LinearGradient(
                             colors: [
+                              Color(0xFF9C27B0),  // 深紫色
+                              Color(0xFFE91E63),  // 粉红色
                               Color(0xFFBA68C8),  // 浅紫色
-                              Color(0xFF9C27B0),  // 中紫色
-                              Color(0xFFE1BEE7),  // 淡紫色
-                              Color(0xFF9C27B0),  // 中紫色
-                              Color(0xFFBA68C8),  // 浅紫色
+                              Color(0xFFE91E63),  // 粉红色
+                              Color(0xFF9C27B0),  // 深紫色
                             ],
                             stops: [
                               (gradientPosition - 0.4).clamp(0.0, 1.0),
@@ -366,11 +366,11 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                           shaderCallback: (bounds) {
                             return LinearGradient(
                               colors: [
+                                Color(0xFF9C27B0),  // 深紫色
+                                Color(0xFFE91E63),  // 粉红色
                                 Color(0xFFBA68C8),  // 浅紫色
-                                Color(0xFF9C27B0),  // 中紫色
-                                Color(0xFFE1BEE7),  // 淡紫色
-                                Color(0xFF9C27B0),  // 中紫色
-                                Color(0xFFBA68C8),  // 浅紫色
+                                Color(0xFFE91E63),  // 粉红色
+                                Color(0xFF9C27B0),  // 深紫色
                               ],
                               stops: [
                                 (gradientPosition - 0.4).clamp(0.0, 1.0),
