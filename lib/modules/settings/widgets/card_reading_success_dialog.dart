@@ -146,7 +146,7 @@ class _CardReadingSuccessDialogState extends State<CardReadingSuccessDialog>
                 ),
 
                 // 显示卡号（可选）
-                if (widget.cardNumber != null) ..[
+                if (widget.cardNumber != null) ...[
                   SizedBox(height: 12.h),
                   Text(
                     '卡号：${widget.cardNumber}',
