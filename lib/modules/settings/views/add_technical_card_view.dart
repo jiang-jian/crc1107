@@ -494,7 +494,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
         Obx(() {
           final selectedDevice = _service.selectedReader.value;
           final cardData = _service.cardData.value;
-          final isReading = _service.isReading.value;
+          final isManualReading = _service.isManualReading.value;  // 🔧 改用 isManualReading
           final lastError = _service.lastError.value;
           
           // 判断应该显示哪个状态
@@ -511,7 +511,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
               displayText = '已读取到卡片：${cardData['uid']}';
               displayIcon = Icons.check_circle;
               shouldShow = true;
-            } else if (isReading) {
+            } else if (isManualReading) {  // 🔧 改用 isManualReading，避免自动轮询时闪烁
               displayText = '正在读取卡片...';
               displayIcon = Icons.credit_card;
               shouldShow = true;

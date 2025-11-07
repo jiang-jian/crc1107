@@ -25,6 +25,9 @@ class ExternalCardReaderService extends GetxService {
 
   // 是否正在读卡
   final isReading = false.obs;
+  
+  // 是否为手动读卡（用于UI显示，区分自动轮询和手动读卡）
+  final isManualReading = false.obs;
 
   // 读卡测试是否成功
   final testReadSuccess = false.obs;
@@ -366,6 +369,7 @@ class ExternalCardReaderService extends GetxService {
     }
 
     isReading.value = true;
+    isManualReading.value = true;  // 🔧 标记为手动读卡，UI会显示提示
     testReadSuccess.value = false;
     cardData.value = null;
     readerStatus.value = ExternalCardReaderStatus.reading;
@@ -445,6 +449,7 @@ class ExternalCardReaderService extends GetxService {
       );
     } finally {
       isReading.value = false;
+      isManualReading.value = false;  // 🔧 重置手动读卡标志
       _addLog('========== 测试读卡结束 ==========');
     }
   }
@@ -589,6 +594,7 @@ class ExternalCardReaderService extends GetxService {
     _stopAutoRead();
     // 🔧 FIX: 重置状态，防止下次启动时状态错误
     isReading.value = false;
+    isManualReading.value = false;  // 🔧 重置手动读卡标志
     isScanning.value = false;
     _addLog('服务关闭');
     super.onClose();
