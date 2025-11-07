@@ -14,18 +14,35 @@ class AddTechnicalCardView extends StatefulWidget {
   State<AddTechnicalCardView> createState() => _AddTechnicalCardViewState();
 }
 
-class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
+class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with SingleTickerProviderStateMixin {
   late final TextEditingController _cardNumberController;
   late final ExternalCardReaderService _service;
   String? _lastCardUid; // 记录上次填充的卡号，避免重复填充
   bool _isDialogShowing = false; // 记录弹窗是否正在显示
   bool _hasProcessedSuccess = false; // 记录是否已处理成功状态，避免重复处理
   bool _isManualReading = false; // 标记是否为手动读卡（区分自动轮询和手动读卡）
+  
+  // 动画控制器（用于紫色渐变呼吸效果）
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
     _cardNumberController = TextEditingController();
+    
+    // 初始化动画控制器（紫色渐变呼吸效果）
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    
+    _shimmerAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _shimmerController,
+        curve: Curves.easeInOut,
+      ),
+    );
     
     // 获取或创建服务
     try {
@@ -85,6 +102,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
   @override
   void dispose() {
     _cardNumberController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -108,26 +126,33 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. 读卡器类型
-            _buildCardReaderType(),
-            
-            SizedBox(height: 32.h),
-            
-            // 2. 读卡器状态
-            _buildCardReaderStatus(),
-            
-            SizedBox(height: 32.h),
-            
-            // 3. 卡面卡号
-            _buildCardNumberInput(),
-          ],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width / 3,
+          ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. 读卡器类型
+                _buildCardReaderType(),
+                
+                SizedBox(height: 32.h),
+                
+                // 2. 读卡器状态
+                _buildCardReaderStatus(),
+                
+                SizedBox(height: 32.h),
+                
+                // 3. 卡面卡号
+                _buildCardNumberInput(),
+              ],
+            ),
+          ),
         ),
-      ),
+      );
     );
   }
 
@@ -280,6 +305,65 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
                   ),
                 ],
               ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+        
+        // 紫色渐变动态提示（放置在读卡器状态区域底部）
+        Obx(() {
+          final selectedDevice = _service.selectedReader.value;
+          final isReading = _service.isReading.value;
+          final cardData = _service.cardData.value;
+          final lastError = _service.lastError.value;
+          
+          // 只在已连接、未读卡、无错误、无数据时显示
+          if (selectedDevice != null && !isReading && cardData == null && lastError == null) {
+            return AnimatedBuilder(
+              animation: _shimmerAnimation,
+              builder: (context, child) {
+                return Container(
+                  margin: EdgeInsets.only(top: 16.h),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value * 0.15),
+                        Color(0xFFE1BEE7).withOpacity(_shimmerAnimation.value * 0.25),
+                        Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value * 0.15),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value * 0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.credit_card,
+                        size: 20.sp,
+                        color: Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          '请将技术卡放置在读卡器上，系统将自动读取卡号',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Color(0xFF6A1B9A).withOpacity(_shimmerAnimation.value),
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
           }
           return const SizedBox.shrink();
@@ -476,36 +560,8 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
                   ],
                 ),
               );
-            } else {
-              // 等待放卡
-              return Container(
-                margin: EdgeInsets.only(top: 12.h),
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3CD),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 18.sp,
-                      color: const Color(0xFF856404),
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        '请将技术卡放置在读卡器上，系统将自动读取卡号',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: const Color(0xFF856404),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
             }
+            // 🔧 "等待放卡"提示已移动到读卡器状态区域（紫色渐变动画）
           }
           
           return const SizedBox.shrink();
