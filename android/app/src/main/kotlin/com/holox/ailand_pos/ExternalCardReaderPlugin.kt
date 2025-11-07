@@ -29,6 +29,8 @@ class ExternalCardReaderPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
     private var context: Context? = null
     private var usbManager: UsbManager? = null
+    private val connectionLock = Any()
+    @Volatile
     private var currentConnection: UsbDeviceConnection? = null
     private val cardReadExecutor = Executors.newSingleThreadScheduledExecutor()
 
@@ -745,6 +747,7 @@ class ExternalCardReaderPlugin : FlutterPlugin, MethodCallHandler {
      */
     private fun performCardRead(device: UsbDevice): Map<String, Any>? {
         var connection: UsbDeviceConnection? = null
+        var claimedInterface: android.hardware.usb.UsbInterface? = null
         try {
             Log.d(TAG, "========== 开始读卡操作 ==========")
             Log.d(TAG, "目标设备: ${device.deviceName}")
@@ -758,7 +761,10 @@ class ExternalCardReaderPlugin : FlutterPlugin, MethodCallHandler {
             }
             Log.d(TAG, "✓ 设备连接已打开")
 
-            currentConnection = connection
+            // 🔧 FIX: 使用同步锁保护 currentConnection
+            synchronized(connectionLock) {
+                currentConnection = connection
+            }
 
             // 查找CCID接口
             Log.d(TAG, "正在查找CCID接口...")
@@ -779,6 +785,7 @@ class ExternalCardReaderPlugin : FlutterPlugin, MethodCallHandler {
                 Log.e(TAG, "✗ 无法声明接口（可能被其他程序占用）")
                 return null
             }
+            claimedInterface = ccidInterface
             Log.d(TAG, "✓ 接口声明成功")
 
             // 查找端点
@@ -975,8 +982,17 @@ class ExternalCardReaderPlugin : FlutterPlugin, MethodCallHandler {
                 "isValid" to false
             )
         } finally {
+            // 🔧 FIX: 先释放接口，再关闭连接（防止接口占用）
+            try {
+                claimedInterface?.let { connection?.releaseInterface(it) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error releasing interface: ${e.message}")
+            }
             connection?.close()
-            currentConnection = null
+            // 🔧 FIX: 使用同步锁保护 currentConnection
+            synchronized(connectionLock) {
+                currentConnection = null
+            }
         }
     }
 
@@ -1390,7 +1406,10 @@ class ExternalCardReaderPlugin : FlutterPlugin, MethodCallHandler {
      * 关闭当前连接
      */
     private fun closeConnection() {
-        currentConnection?.close()
-        currentConnection = null
+        // 🔧 FIX: 使用同步锁保护 currentConnection
+        synchronized(connectionLock) {
+            currentConnection?.close()
+            currentConnection = null
+        }
     }
 }

@@ -88,6 +88,8 @@ class ExternalCardReaderService extends GetxService {
 
       case 'onUsbDeviceDetached':
         _addLog('USB设备已断开');
+        // 🔧 FIX: 先停止自动读卡，防止尝试读取已断开的设备
+        _stopAutoRead();
         await scanUsbReaders();
         break;
 
@@ -106,6 +108,9 @@ class ExternalCardReaderService extends GetxService {
 
       case 'onPermissionDenied':
         _addLog('✗ USB权限被拒绝');
+        // 🔧 FIX: 清理状态，防止UI显示错误的设备状态
+        selectedReader.value = null;
+        _stopAutoRead();
         readerStatus.value = ExternalCardReaderStatus.error;
         lastError.value = 'USB权限被拒绝，请在系统设置中允许USB访问';
         break;
@@ -316,6 +321,7 @@ class ExternalCardReaderService extends GetxService {
       lastError.value = '扫描失败: $e';  // 🔧 设置错误信息
       latestDeviceId.value = null;  // 🔧 清除新设备高亮
       lastReadDeviceId.value = null;  // 🔧 清除刷卡高亮
+      testReadSuccess.value = false;  // 🔧 重置测试状态
     } finally {
       isScanning.value = false;
       _addLog('========== 扫描完成 ==========');
@@ -392,10 +398,15 @@ class ExternalCardReaderService extends GetxService {
       final device = selectedReader.value!;
       _addLog('请求读卡: ${device.displayName}');
 
-      // 调用原生方法读卡
+      // 调用原生方法读卡（添加超时控制防止永久阻塞）
       final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'readCard',
         {'deviceId': device.deviceId},
+      ).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          throw TimeoutException('读卡超时，请重试');
+        },
       );
 
       _addLog('原生返回: $result');
@@ -477,9 +488,8 @@ class ExternalCardReaderService extends GetxService {
 
   /// 启动自动读卡（当设备连接时）
   void _startAutoRead() {
-    if (_autoReadTimer != null && _autoReadTimer!.isActive) {
-      return; // 已经在运行
-    }
+    // 🔧 FIX: 先取消旧定时器（避免竞态条件导致多个定时器同时运行）
+    _autoReadTimer?.cancel();
 
     _addLog('启动自动读卡监听');
     _autoReadTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
@@ -577,6 +587,9 @@ class ExternalCardReaderService extends GetxService {
   @override
   void onClose() {
     _stopAutoRead();
+    // 🔧 FIX: 重置状态，防止下次启动时状态错误
+    isReading.value = false;
+    isScanning.value = false;
     _addLog('服务关闭');
     super.onClose();
   }
