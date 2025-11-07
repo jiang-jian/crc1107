@@ -120,7 +120,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
         title: Text(
           '添加技术卡',
           style: TextStyle(
-            fontSize: 20.sp,
+            fontSize: 24.sp,  // 🔧 标题放大：20 → 24
             fontWeight: FontWeight.bold,
             color: const Color(0xFF2C3E50),
           ),
@@ -182,7 +182,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
               Text(
                 '感应式IC卡（M1芯片）',
                 style: TextStyle(
-                  fontSize: 16.sp,
+                  fontSize: 18.sp,  // 🔧 卡片类型放大：16 → 18
                   color: const Color(0xFF333333),
                 ),
               ),
@@ -232,7 +232,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                 Text(
                   isConnected ? '已连接就绪' : '未连接',
                   style: TextStyle(
-                    fontSize: 16.sp,
+                    fontSize: 18.sp,  // 🔧 连接状态放大：16 → 18
                     color: isConnected
                         ? const Color(0xFF4CAF50)
                         : const Color(0xFF999999),
@@ -250,7 +250,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                     child: Text(
                       isScanning ? '扫描中...' : '连接读卡器',
                       style: TextStyle(
-                        fontSize: 15.sp,
+                        fontSize: 18.sp,  // 🔧 按钮文字放大：15 → 18
                         color: isScanning
                             ? const Color(0xFF999999)
                             : const Color(0xFFE5B544),
@@ -298,7 +298,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                     child: Text(
                       selectedDevice.displayName,
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 16.sp,  // 🔧 设备名称放大：14 → 16
                         color: const Color(0xFF666666),
                       ),
                     ),
@@ -384,7 +384,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                           child: Text(
                             '请将技术卡放置在读卡器上，系统将自动读取卡号',
                             style: TextStyle(
-                              fontSize: 14.sp,
+                              fontSize: 16.sp,  // 🔧 重要提示放大：14 → 16
                               color: Colors.white, // 被 shader 覆盖
                               fontWeight: FontWeight.w500,
                               height: 1.4,
@@ -435,7 +435,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                   decoration: InputDecoration(
                     hintText: '请输入卡面卡号',
                     hintStyle: TextStyle(
-                      fontSize: 15.sp,
+                      fontSize: 17.sp,  // 🔧 输入提示放大：15 → 17
                       color: const Color(0xFF999999),
                     ),
                     border: OutlineInputBorder(
@@ -456,7 +456,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                     ),
                   ),
                   style: TextStyle(
-                    fontSize: 16.sp,
+                    fontSize: 18.sp,  // 🔧 输入内容放大：16 → 18
                     color: const Color(0xFF333333),
                   ),
                 );
@@ -482,7 +482,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
               child: Text(
                 '添加',
                 style: TextStyle(
-                  fontSize: 16.sp,
+                  fontSize: 18.sp,  // 🔧 添加按钮放大：16 → 18
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -584,7 +584,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                                 child: Text(
                                   displayText,
                                   style: TextStyle(
-                                    fontSize: 13.sp,
+                                    fontSize: 16.sp,  // 🔧 状态提示放大：13 → 16
                                     color: Colors.white, // 被 shader 覆盖
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -633,7 +633,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
         Text(
           '*',
           style: TextStyle(
-            fontSize: 16.sp,
+            fontSize: 18.sp,  // 🔧 标签放大：16 → 18
             color: Colors.red,
             fontWeight: FontWeight.bold,
           ),
@@ -642,7 +642,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
         Text(
           label,
           style: TextStyle(
-            fontSize: 16.sp,
+            fontSize: 18.sp,  // 🔧 标签放大：16 → 18
             fontWeight: FontWeight.w600,
             color: const Color(0xFF2C3E50),
           ),
