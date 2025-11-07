@@ -490,112 +490,114 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
           ],
         ),
         
-        // 实时读卡提示
+        // 实时读卡提示（固定高度，渐变文字效果）
         Obx(() {
           final selectedDevice = _service.selectedReader.value;
           final cardData = _service.cardData.value;
           final isReading = _service.isReading.value;
           final lastError = _service.lastError.value;
           
+          // 判断应该显示哪个状态
+          String? displayText;
+          IconData? displayIcon;
+          bool shouldShow = false;
+          
           if (selectedDevice != null) {
-            // 优先显示错误状态
             if (lastError != null) {
-              return Container(
-                margin: EdgeInsets.only(top: 12.h),
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEBEE),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 18.sp,
-                      color: const Color(0xFFC62828),
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        '读卡失败：$lastError',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: const Color(0xFFC62828),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-            
-            // 显示读卡状态
-            if (cardData != null && cardData['isValid'] == true) {
-              // 成功读取卡片
-              return Container(
-                margin: EdgeInsets.only(top: 12.h),
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 18.sp,
-                      color: const Color(0xFF4CAF50),
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        '已读取到卡片：${cardData['uid']}',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: const Color(0xFF2E7D32),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              displayText = '读卡失败：$lastError';
+              displayIcon = Icons.error_outline;
+              shouldShow = true;
+            } else if (cardData != null && cardData['isValid'] == true) {
+              displayText = '已读取到卡片：${cardData['uid']}';
+              displayIcon = Icons.check_circle;
+              shouldShow = true;
             } else if (isReading) {
-              // 正在读卡
-              return Container(
-                margin: EdgeInsets.only(top: 12.h),
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 16.w,
-                      height: 16.h,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        '正在读取卡片...',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: const Color(0xFF1976D2),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              displayText = '正在读取卡片...';
+              displayIcon = Icons.credit_card;
+              shouldShow = true;
             }
-            // 🔧 "等待放卡"提示已移动到读卡器状态区域（紫色渐变动画）
           }
           
-          return const SizedBox.shrink();
+          return AnimatedBuilder(
+            animation: _shimmerAnimation,
+            builder: (context, child) {
+              // 计算渐变色带的位置
+              final gradientPosition = _shimmerAnimation.value;
+              
+              return Container(
+                margin: EdgeInsets.only(top: 12.h),
+                height: 50.h, // 固定高度，避免布局变化
+                alignment: Alignment.centerLeft,
+                child: AnimatedOpacity(
+                  opacity: shouldShow ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: displayText != null
+                      ? Row(
+                          children: [
+                            if (displayIcon != null)
+                              ShaderMask(
+                                shaderCallback: (bounds) {
+                                  return LinearGradient(
+                                    colors: [
+                                      Color(0xFF9C27B0),  // 深紫色
+                                      Color(0xFFE91E63),  // 粉红色
+                                      Color(0xFFBA68C8),  // 浅紫色
+                                      Color(0xFFE91E63),  // 粉红色
+                                      Color(0xFF9C27B0),  // 深紫色
+                                    ],
+                                    stops: [
+                                      (gradientPosition - 0.4).clamp(0.0, 1.0),
+                                      (gradientPosition - 0.2).clamp(0.0, 1.0),
+                                      gradientPosition.clamp(0.0, 1.0),
+                                      (gradientPosition + 0.2).clamp(0.0, 1.0),
+                                      (gradientPosition + 0.4).clamp(0.0, 1.0),
+                                    ],
+                                  ).createShader(bounds);
+                                },
+                                child: Icon(
+                                  displayIcon,
+                                  size: 18.sp,
+                                  color: Colors.white, // 被 shader 覆盖
+                                ),
+                              ),
+                            if (displayIcon != null) SizedBox(width: 8.w),
+                            Expanded(
+                              child: ShaderMask(
+                                shaderCallback: (bounds) {
+                                  return LinearGradient(
+                                    colors: [
+                                      Color(0xFF9C27B0),  // 深紫色
+                                      Color(0xFFE91E63),  // 粉红色
+                                      Color(0xFFBA68C8),  // 浅紫色
+                                      Color(0xFFE91E63),  // 粉红色
+                                      Color(0xFF9C27B0),  // 深紫色
+                                    ],
+                                    stops: [
+                                      (gradientPosition - 0.4).clamp(0.0, 1.0),
+                                      (gradientPosition - 0.2).clamp(0.0, 1.0),
+                                      gradientPosition.clamp(0.0, 1.0),
+                                      (gradientPosition + 0.2).clamp(0.0, 1.0),
+                                      (gradientPosition + 0.4).clamp(0.0, 1.0),
+                                    ],
+                                  ).createShader(bounds);
+                                },
+                                child: Text(
+                                  displayText,
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: Colors.white, // 被 shader 覆盖
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              );
+            },
+          );
         }),
       ],
     );
