@@ -44,6 +44,12 @@ class ExternalCardReaderService extends GetxService {
   // 自动读卡定时器
   Timer? _autoReadTimer;
 
+  // 最新接入的设备ID（用于高亮显示）
+  final Rx<String?> latestDeviceId = Rx<String?>(null);
+
+  // 最近刷卡的设备ID（用于显示刷卡联动）
+  final Rx<String?> lastReadDeviceId = Rx<String?>(null);
+
   /// 初始化服务
   Future<ExternalCardReaderService> init() async {
     _addLog('========== 初始化外接读卡器服务 ==========');
@@ -168,6 +174,8 @@ class ExternalCardReaderService extends GetxService {
         readerStatus.value = ExternalCardReaderStatus.notConnected;
         cardData.value = null;  // 🔧 清除卡片数据
         lastError.value = null;  // 🔧 清除错误信息
+        latestDeviceId.value = null;  // 🔧 清除新设备高亮
+        lastReadDeviceId.value = null;  // 🔧 清除刷卡高亮
         _stopAutoRead(); // 停止自动读卡
       } else {
         // 解析设备列表
@@ -224,6 +232,8 @@ class ExternalCardReaderService extends GetxService {
             readerStatus.value = ExternalCardReaderStatus.notConnected;
             cardData.value = null;
             lastError.value = null;
+            latestDeviceId.value = null;  // 🔧 清除新设备高亮
+            lastReadDeviceId.value = null;  // 🔧 清除刷卡高亮
             _stopAutoRead();
             isScanning.value = false;
             _addLog('========== 扫描完成 ==========');
@@ -231,6 +241,15 @@ class ExternalCardReaderService extends GetxService {
           }
           
           _addLog('✓ 过滤后剩余 ${filteredReaders.length} 个读卡器设备');
+          
+          // 🔧 追踪新设备：检测是否有新接入的设备
+          final previousDeviceIds = detectedReaders.map((d) => d.deviceId).toSet();
+          final newDevices = filteredReaders.where((d) => !previousDeviceIds.contains(d.deviceId)).toList();
+          if (newDevices.isNotEmpty) {
+            // 有新设备接入，记录最新设备ID（用于UI高亮）
+            latestDeviceId.value = newDevices.first.deviceId;
+            _addLog('🆕 检测到新设备: ${newDevices.first.displayName}');
+          }
           
           // 🔧 第二步：对真正的读卡器按匹配度排序
           filteredReaders.sort((a, b) {
@@ -292,6 +311,8 @@ class ExternalCardReaderService extends GetxService {
       readerStatus.value = ExternalCardReaderStatus.error;
       cardData.value = null;  // 🔧 清除卡片数据
       lastError.value = '扫描失败: $e';  // 🔧 设置错误信息
+      latestDeviceId.value = null;  // 🔧 清除新设备高亮
+      lastReadDeviceId.value = null;  // 🔧 清除刷卡高亮
     } finally {
       isScanning.value = false;
       _addLog('========== 扫描完成 ==========');
@@ -387,7 +408,9 @@ class ExternalCardReaderService extends GetxService {
         testReadSuccess.value = true;
         readerStatus.value = ExternalCardReaderStatus.connected;
         lastError.value = null;
+        lastReadDeviceId.value = device.deviceId; // 🔧 记录刷卡设备ID
         _addLog('✓ 读卡成功');
+        _addLog('  读卡设备: ${device.displayName}');
       } else {
         readerStatus.value = ExternalCardReaderStatus.error;
         lastError.value = cardResult.message;
@@ -517,9 +540,15 @@ class ExternalCardReaderService extends GetxService {
             cardData.value = cardResult.cardData;
             testReadSuccess.value = true;
             lastError.value = null;
+            if (selectedReader.value != null) {
+              lastReadDeviceId.value = selectedReader.value!.deviceId; // 🔧 记录刷卡设备ID
+            }
             _addLog('✓ 检测到新卡片');
             _addLog('  UID: $newUid');
             _addLog('  类型: ${cardResult.cardData!["type"]}');
+            if (selectedReader.value != null) {
+              _addLog('  读卡设备: ${selectedReader.value!.displayName}');
+            }
           }
         } else if (cardResult.errorCode == 'NO_CARD') {
           // 无卡片时不记录日志，避免刷屏

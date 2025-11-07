@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../data/services/external_card_reader_service.dart';
 import '../../../data/models/external_card_reader_model.dart';
+import '../widgets/card_reader_device_list_item.dart';
 
 class ExternalCardReaderView extends StatelessWidget {
   const ExternalCardReaderView({super.key});
@@ -120,13 +121,13 @@ class ExternalCardReaderView extends StatelessWidget {
         
         SizedBox(height: 40.h),
         
-        // 设备信息内容
+        // 设备列表内容（支持多设备）
         Expanded(
           child: service.isScanning.value
               ? _buildScanningState()
-              : device == null
+              : service.detectedReaders.isEmpty
                   ? _buildNoDeviceState()
-                  : _buildDeviceInfoList(device),
+                  : _buildDevicesList(service),
         ),
       ],
     );
@@ -206,97 +207,42 @@ class ExternalCardReaderView extends StatelessWidget {
     );
   }
 
-  Widget _buildDeviceInfoList(ExternalCardReaderDevice device) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 连接状态
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            decoration: BoxDecoration(
-              color: const Color(0xFF52C41A).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 10.w,
-                  height: 10.h,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF52C41A),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  '设备已连接',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: const Color(0xFF52C41A),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+  /// 构建设备列表（支持多设备显示）
+  Widget _buildDevicesList(ExternalCardReaderService service) {
+    return Obx(() {
+      final devices = service.detectedReaders;
+      final selectedDevice = service.selectedReader.value;
+      final latestDeviceId = service.latestDeviceId.value;
+      final lastReadDeviceId = service.lastReadDeviceId.value; // 🔧 获取刷卡设备ID
+      
+      return ListView.builder(
+        itemCount: devices.length,
+        itemBuilder: (context, index) {
+          final device = devices[index];
+          final isSelected = selectedDevice?.deviceId == device.deviceId;
+          final isHighlighted = latestDeviceId == device.deviceId;
+          final isReading = lastReadDeviceId == device.deviceId; // 🔧 判断是否为刷卡设备
           
-          SizedBox(height: 32.h),
-          
-          // 设备详细信息
-          _buildInfoItem('厂商', device.manufacturer, Icons.business),
-          SizedBox(height: 20.h),
-          _buildInfoItem('型号', device.model ?? 'Unknown', Icons.device_hub),
-          SizedBox(height: 20.h),
-          _buildInfoItem('规格', device.specifications ?? 'Unknown', Icons.info_outline),
-          SizedBox(height: 20.h),
-          _buildInfoItem('USB ID', device.usbIdentifier, Icons.usb),
-        ],
-      ),
-    );
+          return CardReaderDeviceListItem(
+            device: device,
+            isSelected: isSelected,
+            isHighlighted: isHighlighted,
+            isReading: isReading, // 🔧 传递刷卡状态
+            onTap: () {
+              // 点击设备项时选择该设备
+              if (device.isConnected) {
+                service.selectedReader.value = device;
+                service.latestDeviceId.value = null; // 清除新设备高亮
+                service.lastReadDeviceId.value = null; // 🔧 清除刷卡高亮
+              }
+            },
+          );
+        },
+      );
+    });
   }
 
-  Widget _buildInfoItem(String label, String value, IconData icon) {
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20.sp, color: const Color(0xFFE5B544)),
-              SizedBox(width: 10.w),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  color: const Color(0xFF999999),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: const Color(0xFF333333),
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildCardReaderConfig(ExternalCardReaderService service, String cardReadStatus) {
     return Column(
