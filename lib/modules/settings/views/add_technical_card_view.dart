@@ -310,75 +310,94 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
           return const SizedBox.shrink();
         }),
         
-        // 紫色渐变动态提示（放置在读卡器状态区域底部）
+        // 渐变文字提示（固定高度区域，避免布局闪烁）
         Obx(() {
           final selectedDevice = _service.selectedReader.value;
           final isReading = _service.isReading.value;
           final cardData = _service.cardData.value;
           final lastError = _service.lastError.value;
           
-          // 只在已连接、未读卡、无错误、无数据时显示
-          if (selectedDevice != null && !isReading && cardData == null && lastError == null) {
-            return AnimatedBuilder(
-              animation: _shimmerAnimation,
-              builder: (context, child) {
-                // 计算渐变色带的位置（从左向右流动）
-                final gradientPosition = _shimmerAnimation.value;
-                
-                return Container(
-                  margin: EdgeInsets.only(top: 16.h),
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFFBA68C8),  // 浅紫色
-                        Color(0xFF9C27B0),  // 中紫色
-                        Color(0xFFE1BEE7),  // 淡紫色
-                        Color(0xFF9C27B0),  // 中紫色
-                        Color(0xFFBA68C8),  // 浅紫色
-                      ],
-                      stops: [
-                        (gradientPosition - 0.4).clamp(0.0, 1.0),
-                        (gradientPosition - 0.2).clamp(0.0, 1.0),
-                        gradientPosition.clamp(0.0, 1.0),
-                        (gradientPosition + 0.2).clamp(0.0, 1.0),
-                        (gradientPosition + 0.4).clamp(0.0, 1.0),
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                      color: Color(0xFF9C27B0),
-                      width: 1.5,
-                    ),
-                  ),
+          // 是否应该显示提示
+          final shouldShow = selectedDevice != null && !isReading && cardData == null && lastError == null;
+          
+          return AnimatedBuilder(
+            animation: _shimmerAnimation,
+            builder: (context, child) {
+              // 计算渐变色带的位置
+              final gradientPosition = _shimmerAnimation.value;
+              
+              return Container(
+                margin: EdgeInsets.only(top: 16.h),
+                height: 50.h, // 固定高度，避免布局变化
+                alignment: Alignment.centerLeft,
+                child: AnimatedOpacity(
+                  opacity: shouldShow ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.credit_card,
-                        size: 20.sp,
-                        color: Colors.white,
+                      ShaderMask(
+                        shaderCallback: (bounds) {
+                          return LinearGradient(
+                            colors: [
+                              Color(0xFFBA68C8),  // 浅紫色
+                              Color(0xFF9C27B0),  // 中紫色
+                              Color(0xFFE1BEE7),  // 淡紫色
+                              Color(0xFF9C27B0),  // 中紫色
+                              Color(0xFFBA68C8),  // 浅紫色
+                            ],
+                            stops: [
+                              (gradientPosition - 0.4).clamp(0.0, 1.0),
+                              (gradientPosition - 0.2).clamp(0.0, 1.0),
+                              gradientPosition.clamp(0.0, 1.0),
+                              (gradientPosition + 0.2).clamp(0.0, 1.0),
+                              (gradientPosition + 0.4).clamp(0.0, 1.0),
+                            ],
+                          ).createShader(bounds);
+                        },
+                        child: Icon(
+                          Icons.credit_card,
+                          size: 20.sp,
+                          color: Colors.white, // 被 shader 覆盖
+                        ),
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
-                        child: Text(
-                          '请将技术卡放置在读卡器上，系统将自动读取卡号',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
+                        child: ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              colors: [
+                                Color(0xFFBA68C8),  // 浅紫色
+                                Color(0xFF9C27B0),  // 中紫色
+                                Color(0xFFE1BEE7),  // 淡紫色
+                                Color(0xFF9C27B0),  // 中紫色
+                                Color(0xFFBA68C8),  // 浅紫色
+                              ],
+                              stops: [
+                                (gradientPosition - 0.4).clamp(0.0, 1.0),
+                                (gradientPosition - 0.2).clamp(0.0, 1.0),
+                                gradientPosition.clamp(0.0, 1.0),
+                                (gradientPosition + 0.2).clamp(0.0, 1.0),
+                                (gradientPosition + 0.4).clamp(0.0, 1.0),
+                              ],
+                            ).createShader(bounds);
+                          },
+                          child: Text(
+                            '请将技术卡放置在读卡器上，系统将自动读取卡号',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.white, // 被 shader 覆盖
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                );
-              },
-            );
-          }
-          return const SizedBox.shrink();
+                ),
+              );
+            },
+          );
         }),
       ],
     );
