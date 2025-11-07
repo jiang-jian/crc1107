@@ -183,7 +183,7 @@ class ExternalCardReaderService extends GetxService {
             .map((item) => ExternalCardReaderDevice.fromMap(Map<String, dynamic>.from(item as Map)))
             .toList();
 
-        detectedReaders.value = readers;
+        // 不在这里赋值，等待过滤后再更新 detectedReaders
         _addLog('✓ 检测到 ${readers.length} 个USB设备');
         
         // 🔧 FIX: 打印所有设备的详细信息，帮助识别正确的读卡器
@@ -241,6 +241,9 @@ class ExternalCardReaderService extends GetxService {
           }
           
           _addLog('✓ 过滤后剩余 ${filteredReaders.length} 个读卡器设备');
+          
+          // 🔧 更新设备列表为过滤后的读卡器（排除USB Hub等非读卡器设备）
+          detectedReaders.value = filteredReaders;
           
           // 🔧 追踪新设备：检测是否有新接入的设备
           final previousDeviceIds = detectedReaders.map((d) => d.deviceId).toSet();
