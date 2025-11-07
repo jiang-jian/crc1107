@@ -153,7 +153,6 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
           ),
         ),
       );
-    );
   }
 
   /// 1. 读卡器类型部分
