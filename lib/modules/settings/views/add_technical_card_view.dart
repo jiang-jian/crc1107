@@ -20,6 +20,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
   String? _lastCardUid; // 记录上次填充的卡号，避免重复填充
   bool _isDialogShowing = false; // 记录弹窗是否正在显示
   bool _hasProcessedSuccess = false; // 记录是否已处理成功状态，避免重复处理
+  bool _isManualReading = false; // 标记是否为手动读卡（区分自动轮询和手动读卡）
 
   @override
   void initState() {
@@ -34,21 +35,9 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
       _service.init();
     }
 
-    // 监听读卡状态变化，自动显示/隐藏读卡中弹窗
-    ever(_service.isReading, (isReading) {
-      if (mounted) {
-        if (isReading && !_isDialogShowing) {
-          // 开始读卡，显示读卡中弹窗
-          _isDialogShowing = true;
-          _hasProcessedSuccess = false; // 重置成功处理标志
-          showCardReadingDialog(context);
-        } else if (!isReading && _isDialogShowing) {
-          // 停止读卡，隐藏读卡中弹窗
-          _isDialogShowing = false;
-          Navigator.of(context).pop();
-        }
-      }
-    });
+    // 🔧 已移除自动读卡弹窗逻辑
+    // 自动读卡（后台轮询）不应该显示弹窗，只在UI上显示实时状态
+    // 弹窗只在手动触发读卡时显示（如果将来需要手动读卡功能）
 
     // 监听卡片数据变化，处理读卡成功
     ever(_service.cardData, (cardData) {
@@ -61,27 +50,15 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
         
         final cardUid = cardData['uid'];
         if (cardUid != null && cardUid != 'Unknown') {
-          // 确保先关闭读卡中弹窗
-          if (_isDialogShowing) {
-            _isDialogShowing = false;
-            Navigator.of(context).pop();
-          }
-          
-          // 延迟一帧显示成功弹窗，确保读卡中弹窗已关闭
+          // 🔧 直接填充卡号，不显示成功弹窗（避免干扰用户操作）
+          // 自动读卡成功后，只需要填充输入框即可
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              showCardReadingSuccessDialog(
-                context,
-                cardNumber: cardUid,
-                displayDuration: const Duration(seconds: 2),
-              );
-              
-              // 成功弹窗显示期间，填充卡号
-              Future.delayed(const Duration(milliseconds: 100), () {
-                if (mounted && _cardNumberController.text != cardUid) {
-                  _cardNumberController.text = cardUid;
-                  _lastCardUid = cardUid;
-                }
+            if (mounted && _cardNumberController.text != cardUid) {
+              _cardNumberController.text = cardUid;
+              _lastCardUid = cardUid;
+              // 重置成功标志，允许下次读卡
+              Future.delayed(const Duration(seconds: 1), () {
+                _hasProcessedSuccess = false;
               });
             }
           });
@@ -89,33 +66,16 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
       }
     });
 
-    // 监听错误状态，显示失败弹窗
+    // 监听错误状态（自动读卡的错误会在页面内显示，不需要弹窗）
     ever(_service.lastError, (error) {
       if (mounted && error != null) {
-        // 确保先关闭读卡中弹窗
-        if (_isDialogShowing) {
-          _isDialogShowing = false;
-          Navigator.of(context).pop();
-        }
-        
-        // 延迟一帧显示失败弹窗，确保读卡中弹窗已关闭
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        // 🔧 错误信息会在页面内的实时状态区域显示
+        // 不需要弹窗，避免干扰用户操作
+        // 自动重置错误状态，允许继续读卡
+        Future.delayed(const Duration(seconds: 3), () {
           if (mounted) {
-            showCardReadingFailureDialog(
-              context,
-              errorMessage: error,
-              onRetry: () {
-                // 清除错误状态，准备重试
-                _service.lastError.value = null;
-                _service.clearCardData();
-                _hasProcessedSuccess = false; // 重置成功处理标志
-              },
-              onCancel: () {
-                // 清除错误状态
-                _service.lastError.value = null;
-                _hasProcessedSuccess = false; // 重置成功处理标志
-              },
-            );
+            _service.lastError.value = null;
+            _hasProcessedSuccess = false;
           }
         });
       }
@@ -420,8 +380,40 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
           final selectedDevice = _service.selectedReader.value;
           final cardData = _service.cardData.value;
           final isReading = _service.isReading.value;
+          final lastError = _service.lastError.value;
           
           if (selectedDevice != null) {
+            // 优先显示错误状态
+            if (lastError != null) {
+              return Container(
+                margin: EdgeInsets.only(top: 12.h),
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEBEE),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 18.sp,
+                      color: const Color(0xFFC62828),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        '读卡失败：$lastError',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: const Color(0xFFC62828),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            
             // 显示读卡状态
             if (cardData != null && cardData['isValid'] == true) {
               // 成功读取卡片
@@ -526,21 +518,22 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> {
   void _handleAddCard() {
     final cardNumber = _cardNumberController.text.trim();
     if (cardNumber.isEmpty) {
-      Get.snackbar(
-        '提示',
-        '请输入卡面卡号',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: const Color(0xFFFFF3CD),
-        colorText: const Color(0xFF856404),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('请输入卡面卡号'),
+          backgroundColor: Color(0xFFE5B544),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
     
     // TODO: 调用后端接口保存技术卡
-    Get.snackbar(
-      '提示',
-      '保存功能开发中，卡号: $cardNumber',
-      snackPosition: SnackPosition.TOP,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('保存功能开发中，卡号: $cardNumber'),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
