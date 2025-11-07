@@ -34,13 +34,13 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
     // 初始化动画控制器（紫色渐变呼吸效果）
     _shimmerController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
+      duration: const Duration(seconds: 3),
+    )..repeat();
     
-    _shimmerAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(
         parent: _shimmerController,
-        curve: Curves.easeInOut,
+        curve: Curves.linear,
       ),
     );
     
@@ -322,22 +322,34 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
             return AnimatedBuilder(
               animation: _shimmerAnimation,
               builder: (context, child) {
+                // 计算渐变色带的位置（从左向右流动）
+                final gradientPosition = _shimmerAnimation.value;
+                
                 return Container(
                   margin: EdgeInsets.only(top: 16.h),
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value * 0.15),
-                        Color(0xFFE1BEE7).withOpacity(_shimmerAnimation.value * 0.25),
-                        Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value * 0.15),
+                        Color(0xFFBA68C8),  // 浅紫色
+                        Color(0xFF9C27B0),  // 中紫色
+                        Color(0xFFE1BEE7),  // 淡紫色
+                        Color(0xFF9C27B0),  // 中紫色
+                        Color(0xFFBA68C8),  // 浅紫色
                       ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      stops: [
+                        (gradientPosition - 0.4).clamp(0.0, 1.0),
+                        (gradientPosition - 0.2).clamp(0.0, 1.0),
+                        gradientPosition.clamp(0.0, 1.0),
+                        (gradientPosition + 0.2).clamp(0.0, 1.0),
+                        (gradientPosition + 0.4).clamp(0.0, 1.0),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                     ),
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
-                      color: Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value * 0.3),
+                      color: Color(0xFF9C27B0),
                       width: 1.5,
                     ),
                   ),
@@ -346,7 +358,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                       Icon(
                         Icons.credit_card,
                         size: 20.sp,
-                        color: Color(0xFF9C27B0).withOpacity(_shimmerAnimation.value),
+                        color: Colors.white,
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
@@ -354,7 +366,7 @@ class _AddTechnicalCardViewState extends State<AddTechnicalCardView> with Single
                           '请将技术卡放置在读卡器上，系统将自动读取卡号',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Color(0xFF6A1B9A).withOpacity(_shimmerAnimation.value),
+                            color: Colors.white,
                             fontWeight: FontWeight.w500,
                             height: 1.4,
                           ),
