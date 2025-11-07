@@ -3,8 +3,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'add_technical_card_view.dart';
 
-class CardRegistrationView extends StatelessWidget {
+class CardRegistrationView extends StatefulWidget {
   const CardRegistrationView({super.key});
+
+  @override
+  State<CardRegistrationView> createState() => _CardRegistrationViewState();
+}
+
+class _CardRegistrationViewState extends State<CardRegistrationView> {
+  int _selectedIndex = 0; // 当前选中的行索引，默认选中第一行
 
   @override
   Widget build(BuildContext context) {
@@ -111,13 +118,15 @@ class CardRegistrationView extends StatelessWidget {
                 final item = mockData[index];
                 return _buildTableRow(
                   isHeader: false,
-                  selected: index == 0, // 默认选中第一行
+                  selected: _selectedIndex == index, // 根据状态判断是否选中
                   cardNumber: item['cardNumber']!,
                   password: item['password']!,
                   operationTime: item['operationTime']!,
                   operator: item['operator']!,
                   onTap: () {
-                    // TODO: 处理行选择
+                    setState(() {
+                      _selectedIndex = index; // 更新选中行
+                    });
                   },
                 );
               },
@@ -208,7 +217,11 @@ class CardRegistrationView extends StatelessWidget {
           backgroundColor: const Color(0xFF4CAF50),
           onPressed: () {
             // 跳转到添加技术卡页面
-            Get.to(() => const AddTechnicalCardView());
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const AddTechnicalCardView(),
+              ),
+            );
           },
         ),
         
@@ -227,10 +240,11 @@ class CardRegistrationView extends StatelessWidget {
           ),
           onPressed: () {
             // TODO: 实现修改密码功能
-            Get.snackbar(
-              '提示',
-              '修改密码功能开发中...',
-              snackPosition: SnackPosition.TOP,
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('修改密码功能开发中...'),
+                behavior: SnackBarBehavior.floating,
+              ),
             );
           },
         ),
@@ -243,10 +257,11 @@ class CardRegistrationView extends StatelessWidget {
           backgroundColor: const Color(0xFF9E9E9E),
           onPressed: () {
             // TODO: 实现注销功能
-            Get.snackbar(
-              '提示',
-              '注销功能开发中...',
-              snackPosition: SnackPosition.TOP,
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('注销功能开发中...'),
+                behavior: SnackBarBehavior.floating,
+              ),
             );
           },
         ),
