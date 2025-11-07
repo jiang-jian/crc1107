@@ -261,34 +261,30 @@ class CardRegistrationView extends StatelessWidget {
     Gradient? gradient,
     required VoidCallback onPressed,
   }) {
-    return Container(
-      width: 140.w,
-      height: 50.h,
-      decoration: BoxDecoration(
-        color: gradient == null ? backgroundColor : null,
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(8.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 140.w,
+        height: 50.h,
+        decoration: BoxDecoration(
+          color: gradient == null ? backgroundColor : null,
+          gradient: gradient,
           borderRadius: BorderRadius.circular(8.r),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
             ),
           ),
         ),
