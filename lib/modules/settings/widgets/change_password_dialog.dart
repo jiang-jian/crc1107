@@ -25,31 +25,17 @@ class ChangePasswordDialog extends StatefulWidget {
 
 class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
-  bool _obscureOldPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
-    _oldPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  /// 验证旧密码
-  String? _validateOldPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return '请输入旧密码';
-    }
-    if (value != widget.currentPassword) {
-      return '旧密码错误';
-    }
-    return null;
   }
 
   /// 验证新密码
@@ -77,17 +63,61 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     return null;
   }
 
-  /// 提交修改
+  /// 提交修改（预留后端接口对接）
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      // 验证通过，执行回调
+      // 组织数据，准备调用后端接口
+      final requestData = {
+        'cardNumber': widget.cardNumber,
+        'oldPassword': widget.currentPassword,
+        'newPassword': _newPasswordController.text,
+      };
+      
+      // TODO: 后端接口对接
+      // 示例代码（待后端接口开发完成后启用）：
+      // try {
+      //   final response = await ApiService.changePassword(requestData);
+      //   if (response.success) {
+      //     // 接口调用成功
+      //     widget.onPasswordChanged(_newPasswordController.text);
+      //     Navigator.of(context).pop();
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(
+      //         content: Text('密码修改成功！卡号：${widget.cardNumber}'),
+      //         backgroundColor: const Color(0xFF4CAF50),
+      //         behavior: SnackBarBehavior.floating,
+      //       ),
+      //     );
+      //   } else {
+      //     // 接口返回失败
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(
+      //         content: Text(response.message ?? '密码修改失败'),
+      //         backgroundColor: const Color(0xFFE53935),
+      //         behavior: SnackBarBehavior.floating,
+      //       ),
+      //     );
+      //   }
+      // } catch (e) {
+      //   // 接口调用异常
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(
+      //       content: Text('网络错误：${e.toString()}'),
+      //       backgroundColor: const Color(0xFFE53935),
+      //       behavior: SnackBarBehavior.floating,
+      //     ),
+      //   );
+      // }
+      
+      // 临时方案：直接更新本地数据（演示效果）
+      // 后端接口开发完成后，删除此段代码，启用上面的接口调用代码
       widget.onPasswordChanged(_newPasswordController.text);
       Navigator.of(context).pop();
       
       // 显示成功提示
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('密码修改成功！卡号：${widget.cardNumber}'),
+          content: Text('密码修改成功！卡号：${widget.cardNumber}（临时演示，待对接后端）'),
           backgroundColor: const Color(0xFF4CAF50),
           behavior: SnackBarBehavior.floating,
         ),
@@ -165,18 +195,10 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
             
             SizedBox(height: 20.h),
             
-            // 旧密码输入框
-            _buildPasswordField(
-              controller: _oldPasswordController,
+            // 旧密码（只读显示）
+            _buildInfoField(
               label: '旧密码',
-              hint: '请输入旧密码',
-              obscureText: _obscureOldPassword,
-              validator: _validateOldPassword,
-              onToggleVisibility: () {
-                setState(() {
-                  _obscureOldPassword = !_obscureOldPassword;
-                });
-              },
+              value: widget.currentPassword,
             ),
             
             SizedBox(height: 20.h),
