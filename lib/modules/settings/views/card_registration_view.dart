@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'add_technical_card_view.dart';
 import '../widgets/change_password_dialog.dart';
+import '../widgets/deactivate_card_dialog.dart';
 
 class CardRegistrationView extends StatefulWidget {
   const CardRegistrationView({super.key});
@@ -280,16 +281,44 @@ class _CardRegistrationViewState extends State<CardRegistrationView> {
         
         SizedBox(width: 16.w),
         
-        // 注销按钮（灰色）
+        // 注销技术卡按钮（灰色）
         _buildButton(
           label: '注销',
           backgroundColor: const Color(0xFF9E9E9E),
           onPressed: () {
-            // TODO: 实现注销功能
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('注销功能开发中...'),
-                behavior: SnackBarBehavior.floating,
+            // 检查是否有选中的卡片
+            if (_selectedIndex < 0 || _selectedIndex >= _mockData.length) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('请先选择要注销的技术卡'),
+                  backgroundColor: Color(0xFFFF9800),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+            
+            // 获取选中的卡片数据
+            final selectedCard = _mockData[_selectedIndex];
+            
+            // 显示注销技术卡对话框
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => DeactivateCardDialog(
+                cardNumber: selectedCard['cardNumber']!,
+                onCardDeactivated: (cardNumber) {
+                  // 从列表中移除注销的卡片
+                  setState(() {
+                    _mockData.removeAt(_selectedIndex);
+                    // 重置选中索引
+                    if (_mockData.isNotEmpty) {
+                      _selectedIndex = 0; // 默认选中第一行
+                    } else {
+                      _selectedIndex = -1; // 没有数据时重置为 -1
+                    }
+                  });
+                },
               ),
             );
           },
