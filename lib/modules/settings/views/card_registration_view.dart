@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'add_technical_card_view.dart';
+import '../widgets/change_password_dialog.dart';
 
 class CardRegistrationView extends StatefulWidget {
   const CardRegistrationView({super.key});
@@ -12,6 +13,28 @@ class CardRegistrationView extends StatefulWidget {
 
 class _CardRegistrationViewState extends State<CardRegistrationView> {
   int _selectedIndex = 0; // 当前选中的行索引，默认选中第一行
+  
+  // 模拟数据（提升到 State 类级别，以便更新）
+  List<Map<String, String>> _mockData = [
+    {
+      'cardNumber': '1001',
+      'password': '123456',
+      'operationTime': '2024-01-15 10:30:25',
+      'operator': '张三',
+    },
+    {
+      'cardNumber': '1002',
+      'password': '654321',
+      'operationTime': '2024-01-16 14:20:10',
+      'operator': '李四',
+    },
+    {
+      'cardNumber': '1003',
+      'password': '111222',
+      'operationTime': '2024-01-17 09:15:30',
+      'operator': '王五',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -55,27 +78,6 @@ class _CardRegistrationViewState extends State<CardRegistrationView> {
 
   /// 数据表格
   Widget _buildDataTable() {
-    // 模拟数据
-    final mockData = [
-      {
-        'cardNumber': '1001',
-        'password': '123456',
-        'operationTime': '2024-01-15 10:30:25',
-        'operator': '张三',
-      },
-      {
-        'cardNumber': '1002',
-        'password': '654321',
-        'operationTime': '2024-01-16 14:20:10',
-        'operator': '李四',
-      },
-      {
-        'cardNumber': '1003',
-        'password': '111222',
-        'operationTime': '2024-01-17 09:15:30',
-        'operator': '王五',
-      },
-    ];
 
     return Container(
       decoration: BoxDecoration(
@@ -109,13 +111,13 @@ class _CardRegistrationViewState extends State<CardRegistrationView> {
           // 数据行
           Expanded(
             child: ListView.separated(
-              itemCount: mockData.length,
+              itemCount: _mockData.length,
               separatorBuilder: (context, index) => Divider(
                 height: 1.h,
                 color: const Color(0xFFE0E0E0),
               ),
               itemBuilder: (context, index) {
-                final item = mockData[index];
+                final item = _mockData[index];
                 return _buildTableRow(
                   isHeader: false,
                   selected: _selectedIndex == index, // 根据状态判断是否选中
@@ -239,11 +241,38 @@ class _CardRegistrationViewState extends State<CardRegistrationView> {
             end: Alignment.bottomRight,
           ),
           onPressed: () {
-            // TODO: 实现修改密码功能
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('修改密码功能开发中...'),
-                behavior: SnackBarBehavior.floating,
+            // 检查是否有选中的卡片
+            if (_selectedIndex < 0 || _selectedIndex >= _mockData.length) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('请先选择要修改密码的技术卡'),
+                  backgroundColor: Color(0xFFFF9800),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+            
+            // 获取选中的卡片数据
+            final selectedCard = _mockData[_selectedIndex];
+            
+            // 显示修改密码对话框
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => ChangePasswordDialog(
+                cardNumber: selectedCard['cardNumber']!,
+                currentPassword: selectedCard['password']!,
+                onPasswordChanged: (newPassword) {
+                  // 更新密码和操作时间
+                  setState(() {
+                    _mockData[_selectedIndex]['password'] = newPassword;
+                    _mockData[_selectedIndex]['operationTime'] = 
+                        DateTime.now().toString().substring(0, 19);
+                    // TODO: 这里应该更新操作人为当前登录用户
+                    // _mockData[_selectedIndex]['operator'] = currentUser;
+                  });
+                },
               ),
             );
           },
