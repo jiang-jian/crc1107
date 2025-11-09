@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/receipt/custody_receipt_template.dart';
 import '../../../data/models/receipt/custody_receipt_data.dart';
+import '../../../data/services/sunmi_printer_service.dart';
 
 /// 托管小票配置控制器
 /// 负责模板的加载、保存、预览等业务逻辑
@@ -419,5 +420,153 @@ class CustodyReceiptConfigController extends GetxController {
       '未保存的修改已放弃',
       snackPosition: SnackPosition.BOTTOM,
     );
+  }
+
+  // ========== 打印功能集成 ==========
+
+  /// 获取打印机服务
+  SunmiPrinterService get _printerService {
+    try {
+      return Get.find<SunmiPrinterService>();
+    } catch (e) {
+      throw Exception('打印机服务未初始化，请确保在 main.dart 中注册了 SunmiPrinterService');
+    }
+  }
+
+  /// 测试条形码打印
+  /// 使用当前配置的条形码类型和预览数据进行测试
+  Future<void> testPrintBarcode() async {
+    try {
+      final config = template.value.depositInfo;
+      
+      if (!config.showBarcode) {
+        Get.snackbar(
+          '提示',
+          '条形码显示已关闭，请先在配置中启用',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      Get.snackbar(
+        '正在打印',
+        '正在测试条形码打印...',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+
+      final success = await _printerService.printBarcode(
+        previewData.value.depositNumber,
+        config.barcodeType,
+      );
+
+      if (success) {
+        Get.snackbar(
+          '打印成功',
+          '条形码已发送到打印机',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar(
+          '打印失败',
+          '条形码打印失败，请检查打印机状态',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        '打印错误',
+        '条形码打印时出错: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  /// 测试完整小票打印
+  /// 使用当前模板配置和预览数据打印完整小票
+  Future<void> testPrintReceipt() async {
+    try {
+      // 先验证配置
+      if (!validateTemplate()) {
+        return; // 验证失败时已经显示了错误信息
+      }
+
+      Get.snackbar(
+        '正在打印',
+        '正在打印托管小票...',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+
+      final success = await _printerService.printCustodyReceipt(
+        template.value,
+        previewData.value,
+      );
+
+      if (success) {
+        Get.snackbar(
+          '打印成功',
+          '托管小票已发送到打印机',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar(
+          '打印失败',
+          '小票打印失败，请检查打印机状态',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        '打印错误',
+        '小票打印时出错: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  /// 检查打印机状态
+  Future<void> checkPrinterStatus() async {
+    try {
+      final status = await _printerService.getPrinterStatus();
+      
+      String statusText;
+      switch (status.status) {
+        case PrinterStatus.ready:
+          statusText = '✅ 打印机就绪';
+          break;
+        case PrinterStatus.error:
+          statusText = '❌ 打印机错误: ${status.message}';
+          break;
+        case PrinterStatus.warning:
+          statusText = '⚠️ 打印机警告: ${status.message}';
+          break;
+        case PrinterStatus.unknown:
+          statusText = '❓ 打印机状态未知';
+          break;
+      }
+
+      Get.snackbar(
+        '打印机状态',
+        statusText,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        '状态检查失败',
+        '无法获取打印机状态: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  /// 获取打印机调试日志
+  List<String> getPrinterLogs() {
+    return _printerService.debugLogs.toList();
+  }
+
+  /// 清除打印机日志
+  void clearPrinterLogs() {
+    _printerService.debugLogs.clear();
   }
 }

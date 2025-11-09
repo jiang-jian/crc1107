@@ -16,6 +16,70 @@ class CustodyReceiptConfigView extends GetView<CustodyReceiptConfigController> {
       appBar: AppBar(
         title: const Text('托管小票配置'),
         actions: [
+          // 打印测试菜单
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.print),
+            tooltip: '打印测试',
+            onSelected: (value) {
+              switch (value) {
+                case 'test_barcode':
+                  controller.testPrintBarcode();
+                  break;
+                case 'test_receipt':
+                  controller.testPrintReceipt();
+                  break;
+                case 'check_status':
+                  controller.checkPrinterStatus();
+                  break;
+                case 'view_logs':
+                  _showPrinterLogs(context);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'test_barcode',
+                child: Row(
+                  children: [
+                    Icon(Icons.qr_code, size: 20),
+                    SizedBox(width: 12),
+                    Text('测试条形码打印'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'test_receipt',
+                child: Row(
+                  children: [
+                    Icon(Icons.receipt_long, size: 20),
+                    SizedBox(width: 12),
+                    Text('测试完整小票'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'check_status',
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 20),
+                    SizedBox(width: 12),
+                    Text('检查打印机状态'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'view_logs',
+                child: Row(
+                  children: [
+                    Icon(Icons.bug_report, size: 20),
+                    SizedBox(width: 12),
+                    Text('查看调试日志'),
+                  ],
+                ),
+              ),
+            ],
+          ),
           // 重置按钮
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -192,5 +256,134 @@ class CustodyReceiptConfigView extends GetView<CustodyReceiptConfigController> {
         ],
       ),
     );
+  }
+
+  /// 显示打印机调试日志
+  void _showPrinterLogs(BuildContext context) {
+    final logs = controller.getPrinterLogs();
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: 600.w,
+          height: 500.h,
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.bug_report),
+                  SizedBox(width: 8.w),
+                  const Text(
+                    '打印机调试日志',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: '清除日志',
+                    onPressed: () {
+                      controller.clearPrinterLogs();
+                      Navigator.of(context).pop();
+                      Get.snackbar(
+                        '已清除',
+                        '打印机日志已清空',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              const Divider(),
+              SizedBox(height: 16.h),
+              Expanded(
+                child: logs.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 48.sp,
+                              color: Colors.grey[400],
+                            ),
+                            SizedBox(height: 16.h),
+                            Text(
+                              '暂无日志记录',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: ListView.builder(
+                          itemCount: logs.length,
+                          itemBuilder: (context, index) {
+                            final log = logs[index];
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: 4.h),
+                              child: Text(
+                                log,
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12.sp,
+                                  color: _getLogColor(log),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+              SizedBox(height: 16.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    '共 ${logs.length} 条日志',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 根据日志内容返回颜色
+  Color _getLogColor(String log) {
+    if (log.contains('✓') || log.contains('成功') || log.contains('完成')) {
+      return Colors.green[300]!;
+    } else if (log.contains('✗') || log.contains('错误') || log.contains('失败')) {
+      return Colors.red[300]!;
+    } else if (log.contains('⚠️') || log.contains('警告')) {
+      return Colors.orange[300]!;
+    } else if (log.contains('步骤') || log.contains('====')) {
+      return Colors.blue[300]!;
+    }
+    return Colors.grey[400]!;
   }
 }
