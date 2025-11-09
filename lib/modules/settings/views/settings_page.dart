@@ -14,6 +14,8 @@ import 'external_printer_view.dart';
 import 'qr_scanner_config_view.dart';
 import 'card_registration_view.dart';
 import 'game_card_management_view.dart';
+import 'custody_receipt_config_view.dart';
+import '../controllers/custody_receipt_config_controller.dart';
 
 class SettingsPage extends GetView<SettingsController> {
   const SettingsPage({super.key});
@@ -104,6 +106,10 @@ class SettingsPage extends GetView<SettingsController> {
         _ensureNetworkCheckController();
         content = const NetworkCheckWidget();
         break;
+      case 'receipt_settings':
+        _ensureCustodyReceiptConfigController();
+        content = const CustodyReceiptConfigView();
+        break;
       case 'card_registration':
         content = const CardRegistrationView();
         break;
@@ -134,6 +140,13 @@ class SettingsPage extends GetView<SettingsController> {
   void _ensureVersionCheckController() {
     if (!Get.isRegistered<VersionCheckController>()) {
       Get.put(VersionCheckController());
+    }
+  }
+
+  void _ensureCustodyReceiptConfigController() {
+    if (!Get.isRegistered<CustodyReceiptConfigController>()) {
+      Get.put(CustodyReceiptConfigController());
+      print('✓ 创建 CustodyReceiptConfigController');
     }
   }
 }
